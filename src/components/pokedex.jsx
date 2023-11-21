@@ -7,8 +7,10 @@ import firestore from '../firebase/firebaseConfig';
 export const Pokedex = () => {
     const [pokemones, setPokemones] = useState([])
     const refFirebase = doc(firestore, 'team/principal')
-    const url = "https://pokeapi.co/api/v2/pokemon/"
+    const [team, setTeam] = useState([])
+    const [page, setPage] = useState(1)
 
+    const url = `https://pokeapi.co/api/v2/pokemon?limit=20&offset=${(page - 1) * 20}`
     function listenToADocument(){
         onSnapshot (refFirebase, docSnapshot => {
             if (docSnapshot.exists()) {
@@ -40,7 +42,25 @@ export const Pokedex = () => {
                 setPokemones(pokemonData)
             })
         })
-    },[setPokemones])
+    },[setPokemones, page])
+
+    useEffect(() => {
+        const unsub = onSnapshot(doc(firestore, "team", "principal"), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                
+                // Iterate over the keys of the data object
+                Object.keys(data).forEach((key) => {
+                    console.log(`${key}: ${data[key]}`); //enviar a useState
+                });
+            } else {
+                console.log("Document does not exist");
+            }
+        });
+    
+        // Cleanup function
+        return () => unsub();
+    }, []);
 
   return (
     <>
@@ -49,6 +69,12 @@ export const Pokedex = () => {
                 return <Pokemon key={index}
                 pokemon = {pokemon}/>
             })}
+            <div>
+                <button onClick={() => setPage(page+1)}>Siguiente</button>
+            </div>
+                {
+                    page != 1 && <button onClick={() => setPage(page-1)}>Anterior</button>
+                }
         </div>
     </>
     
